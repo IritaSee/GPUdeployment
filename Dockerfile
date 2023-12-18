@@ -10,12 +10,10 @@ CMD ["/CMLUtils/make"]
 
 CMD ["/CardioLockGenerator/make"] 
 
-CMD ["./CardioLockGenerator/bin/cardiolockgen 1"]
+CMD ["./CardioLockGenerator/bin/cardiolockgen"]
 
 CMD ["ls /CardioLockGenerator/bin/"]
 
 CMD ["cp /CardioLockGenerator/bin/cardio.lock /DrugSimulationComponentGPU/bin/cardio.lock"]
 
 CMD ["/DrugSimulationComponentGPU/make clean all"]
-
-CMD ["/DrugSimulationComponentGPU/bin/drug_sim"]
