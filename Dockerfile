@@ -1,76 +1,70 @@
-# FROM gcc:latest
-FROM nvidia/cuda:11.8-base-ubuntu20.04 AS builder
+# Stage 1: Build environment with CUDA and necessary tools (CentOS-based)
+FROM nvidia/cuda:12.3.1-devel-centos7 AS builder
 
-WORKDIR /gpu_app
+WORKDIR /app
 
-COPY ./CardioLockGenerator /gpu_app/CardioLockGenerator
-
-COPY ./CMLUtils /gpu_app/CMLUtils
-
-COPY ./DrugSimulationComponentGPU /gpu_app/DrugSimulationComponentGPU
-
-RUN apt-get update && apt-get -y --no-install-recommends install build-essential make clang cmake wget libjson-c-dev curl
-
-
-
-# CMD ["/CMLUtils/make"]
-RUN gpu_app/CMLUtils/make
-
-# CMD ["/CardioLockGenerator/make"] 
-RUN gpu_app/CardioLockGenerator/make
-
-# CMD ["./CardioLockGenerator/bin/cardiolockgen"]
-RUN ./gpu_app/CardioLockGenerator/bin/cardiolockgen
-
-# CMD ["ls /CardioLockGenerator/bin/"]
-
-# RUN mv /CardioLockGenerator/bin/cardio.lock /DrugSimulationComponentGPU/bin/cardio.lock
-
-# CMD ["/DrugSimulationComponentGPU/make all"]
-
-# CMD ["nvidia-smi"]
-
-# CMD ["./DrugSimulationComponentGPU/bin/drug_sim"]
+# Install essential build tools (CentOS-specific packages)
+## in order:
+    # GCC and G++ compilers
+    # CUDA library dependencies
+    # CUDA library dependencies
+    # Additional developer tools (optional)
+    # Additional developer tools (optional)
+RUN yum update -y && yum install -y \
+    make \
+    cmake \
+    libtool \ 
+    libjson-c-dev \
+    libcurl3-dev \ 
+    wget \
+    curl \
+    gcc-c++ \       
+    libcublas-devel-12-3 \  
+    libcudnn8-devel-12-3 \
+    devtoolset-11-gcc* \      
+    devtoolset-11-gcc-c++*  
 
 
+# Activate additional developer tools (if installed)
+# RUN source /opt/rh/devtoolset-11/enable
 
+# Copy project files
+COPY . .
 
+# Compile each project with nvcc
+RUN make -C projects/CMLUtils
 
-### from bard:
+RUN mkdir /usr/local/CMLUtils/
+RUN mkdir /usr/local/CMLUtils/lib
+RUN mkdir /usr/local/CMLUtils/include
+RUN mkdir /usr/local/CMLUtils/include/types/
+RUN mkdir /usr/local/CMLUtils/include/utils/
+RUN mkdir /usr/local/CMLUtils/include/cellmodels
+RUN mkdir /usr/local/CMLUtils/include/cellmodels/enums/
 
-# # Stage 1: Build environment with CUDA and necessary tools
-# FROM nvidia/cuda:11.8-base-ubuntu20.04 AS builder
+RUN cp -r /app/projects/CMLUtils/include/types/* /usr/local/CMLUtils/include/types/
+RUN cp -r /app/projects/CMLUtils/include/utils/* /usr/local/CMLUtils/include/utils/
+RUN cp -r /app/projects/CMLUtils/include/cellmodels/enums/* /usr/local/CMLUtils/include/cellmodels/enums
+RUN cp -r /app/projects/CMLUtils/include/cellmodels/*.hpp /usr/local/CMLUtils/include/cellmodels/
+RUN cp /app/projects/CMLUtils/lib/*.a /usr/local/CMLUtils/lib/
 
-# WORKDIR /app
+RUN make -C projects/CardioLockGenerator
+# RUN make -C project3  
+# Add more commands for additional projects
+##------------------------------------------------------------------------------------
+# Stage 2: Minimal runtime environment (CentOS-based)
+FROM nvidia/cuda:12.3.1-runtime-centos7
 
-# # Install essential build tools
-# RUN apt-get update && apt-get install -y \
-#     build-essential \
-#     gcc-10 \      # Specify GCC version for compatibility
-#     g++-10 \       # Specify G++ version for compatibility
-#     make \
-#     libcublas-dev \ # Include CUDA library dependencies
-#     libcudnn8-dev   # Include CUDA library dependencies
+WORKDIR /app
 
-# # Copy project files
-# COPY . .
+# Copy compiled binaries from the builder stage
+# COPY --from=builder /app/CMLUtils/bin/project1_binary .
+COPY --from=builder /app/CardioLockGenerator/bin/cardiolockgen .
+# COPY --from=builder /app/project3/bin/project3_binary .  
+# Adjust paths for additional projects
 
-# # Compile each project with nvcc
-# RUN make -C project1
-# RUN make -C project2
-# RUN make -C project3  # Add more commands for additional projects
-
-# # Stage 2: Minimal runtime environment
-# FROM nvidia/cuda:11.8-runtime-ubuntu20.04
-
-# WORKDIR /app
-
-# # Copy compiled binaries from the builder stage
-# COPY --from=builder /app/project1/bin/project1_binary .
-# COPY --from=builder /app/project2/bin/project2_binary .
-# COPY --from=builder /app/project3/bin/project3_binary .  # Adjust paths for additional projects
-
-# # Run the binary files (adjust commands as needed)
-# CMD ["./project1_binary"]
+# Run the binary files (adjust commands as needed)
+CMD ["./cardiolockgen"]
 # CMD ["./project2_binary"]
-# CMD ["./project3_binary"]  # Add more CMDs for additional projects
+# CMD ["./project3_binary"]  
+# Add more CMDs for additional projects
