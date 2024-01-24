@@ -14,10 +14,10 @@ RUN yum update -y && yum install -y \
     make \
     cmake \
     libtool \ 
-    libjson-c-dev \
-    libcurl3-dev \ 
+    json-c-devel \
+    curl-devel \ 
+    glibc-static \
     wget \
-    curl \
     gcc-c++ \       
     libcublas-devel-12-3 \  
     libcudnn8-devel-12-3 \
@@ -46,7 +46,7 @@ RUN cp -r /app/projects/CMLUtils/include/types/* /usr/local/CMLUtils/include/typ
 RUN cp -r /app/projects/CMLUtils/include/utils/* /usr/local/CMLUtils/include/utils/
 RUN cp -r /app/projects/CMLUtils/include/cellmodels/enums/* /usr/local/CMLUtils/include/cellmodels/enums
 RUN cp -r /app/projects/CMLUtils/include/cellmodels/*.hpp /usr/local/CMLUtils/include/cellmodels/
-RUN cp /app/projects/CMLUtils/lib/*.a /usr/local/CMLUtils/lib/
+RUN cp -r /app/projects/CMLUtils/lib/* /usr/local/CMLUtils/lib/
 
 RUN make -C projects/CardioLockGenerator
 # RUN make -C project3  
