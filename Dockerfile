@@ -4,12 +4,6 @@ FROM nvidia/cuda:12.3.1-devel-centos7 AS builder
 WORKDIR /app
 
 # Install essential build tools (CentOS-specific packages)
-## in order:
-    # GCC and G++ compilers
-    # CUDA library dependencies
-    # CUDA library dependencies
-    # Additional developer tools (optional)
-    # Additional developer tools (optional)
 RUN yum update -y && yum install -y \
     make \
     cmake \
