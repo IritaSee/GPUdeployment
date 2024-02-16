@@ -1,0 +1,45 @@
+# Use Ubuntu as the base image
+FROM ubuntu:latest
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install necessary packages
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    wget \
+    tar \
+    bzip2 \
+    flex \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download and extract GCC source code
+WORKDIR /root
+RUN wget --no-check-certificate https://github.com/gcc-mirror/gcc/archive/refs/tags/releases/gcc-11.1.0.tar.gz && \
+    tar -xvf gcc-11.1.0.tar.gz && \
+    cd gcc-releases-gcc-11.1.0 && \
+    contrib/download_prerequisites
+
+# Build and install GCC
+WORKDIR /root/build
+RUN ../gcc-releases-gcc-11.1.0/configure -v --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu --prefix=/usr/local/gcc-11.1.0 --enable-checking=release --enable-languages=c,c++,fortran --disable-multilib --program-suffix=-11.1 && \
+    make -j $(nproc) && \
+    make install-strip
+
+# Set environment variables in bashrc
+RUN echo 'export PATH=/usr/local/gcc-11.1.0/bin:$PATH' >> /root/.bashrc && \
+    echo 'export LD_LIBRARY_PATH=/usr/local/gcc-11.1.0/lib64:$LD_LIBRARY_PATH' >> /root/.bashrc && \
+    echo 'export CC=/usr/local/gcc-11.1.0/bin/gcc-11.1' >> /root/.bashrc && \
+    echo 'export CXX=/usr/local/gcc-11.1.0/bin/g++-11.1' >> /root/.bashrc && \
+    echo 'export FC=/usr/local/gcc-11.1.0/bin/gfortran-11.1' >> /root/.bashrc
+
+# Cleanup unnecessary files
+WORKDIR /root
+RUN rm -rf build gcc-11.1.0.tar.gz gcc-releases-gcc-11.1.0
+
+# Display GCC version
+# RUN gcc-11.1 --version
+
+# Start a shell by default
+CMD ["/bin/bash"]
